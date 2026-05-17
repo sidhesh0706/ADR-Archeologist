@@ -1,155 +1,210 @@
 # ADR Archaeologist
 
-> Recovers the architectural decisions your team never wrote down.
+ADR Archaeologist reconstructs undocumented architectural decisions directly
+from a codebase and records them as formal Architecture Decision Records
+(ADRs) in the [MADR](https://adr.github.io/madr/) format.
 
-A Next.js web application that generates Architecture Decision Records (ADRs) by analyzing Git repositories using IBM Bob IDE, Groq AI, and full repository context.
+Most architectural decisions are never written down. Their rationale — and
+the alternatives that were considered and rejected — is recoverable from the
+code itself: dependencies, configuration, directory structure, test patterns,
+commented-out implementations, dead utilities, and abandoned migrations. This
+project analyzes those signals and produces a reviewable, versioned record of
+why a system is built the way it is.
 
-## Features
+## Overview
 
-- 🏛️ **Archaeology Discovery**: Finds rejected alternatives in code comments and commit history
-- 🎯 **Smart Analysis**: 4-stage pipeline (Decision Detection → Context Inference → Alternatives Archaeology → ADR Generation)
-- ⚡ **Real-time Progress**: Server-Sent Events (SSE) for live pipeline updates
-- 📦 **Export Options**: Download as ZIP or create GitHub Pull Request
-- 🎨 **Beautiful UI**: Dark theme with Tailwind CSS and smooth animations
-- 🚀 **Instant Demo**: Try with django/django (no backend required)
+The tool runs a four-stage analysis pipeline:
 
-## Tech Stack
+1. **Decision Detection** — identifies code patterns that represent deliberate
+   architectural choices across seven categories: infrastructure, structure,
+   communication, data, auth, error handling, and testing.
+2. **Context Inference** — reconstructs the problem each decision solved, the
+   constraints that drove it, and where it occurred in the project lifecycle.
+3. **Alternatives Archaeology** — searches for evidence of rejected
+   approaches: commented-out code, migration artifacts, dead utilities, unused
+   imports, removed tests, and migration-related TODO/FIXME comments.
+4. **ADR Generation** — produces complete MADR documents with inferred status
+   (accepted, deprecated, or superseded), an inferred date, an imperative
+   title, consequences, and a cited evidence trail.
 
-- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
-- **Backend**: Express.js, Groq AI (Llama 3.3 70B)
-- **Deployment**: Vercel (frontend) + Render (backend)
+Output is written as `docs/adr/{number}-{kebab-title}.md` plus a
+`docs/adr/README.md` index. Every claim in an ADR is required to cite specific
+file evidence; archaeology findings must quote real lines or report none.
 
-## Getting Started
+## Interfaces
 
-### Prerequisites
+The same analysis is available through three interfaces.
 
-- Node.js 18+
-- npm or yarn
+### 1. IBM Bob IDE (recommended for deep analysis)
 
-### Installation
+A native Bob extension consisting of a mode, a skill, and a command. Bob runs
+the four-stage workflow using its own model and filesystem tools
+(`read_file`, `search_codebase`, `create_file`) and writes the ADR files
+directly into the open repository.
+
+- Mode: `ADR Archaeologist`
+- Skill: `adr-generate`
+- Command: `/adr generate`, or `/adr generate --focus=infrastructure,auth`
+
+This path requires no API key and operates on full file contents, which
+yields the most thorough archaeology results.
+
+### 2. Web application
+
+A Next.js frontend and an Express API backend. The backend runs the pipeline
+against the Groq API and streams progress to the UI over Server-Sent Events.
+Results can be exported as a ZIP archive or opened as a GitHub pull request. A
+demo mode serves pre-generated output for `django/django` without calling any
+external API.
+
+### 3. Command line
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/adr-archaeologist.git
+npm run adr:generate
+```
+
+Generates ADRs for the target repository and writes them to `docs/adr/`.
+
+## Architecture
+
+```
+Next.js / React frontend ──(SSE)──► Express API ──► 4-stage pipeline
+                                                      │
+                                                      ├─ GitHub fetch (Octokit)
+                                                      ├─ Groq (Llama 3.3 70B, JSON mode)
+                                                      ├─ Zod schema validation
+                                                      └─ Deterministic MADR export
+```
+
+The codebase is TypeScript end to end. Notable engineering details:
+
+- **Self-healing schemas.** Zod `z.preprocess` normalization tolerates model
+  output that paraphrases field names, so a renamed key does not fail a run.
+- **Strict JSON mode.** The model is constrained to JSON output, with a robust
+  extractor as a fallback, eliminating fence and prose parsing failures.
+- **Lazy client construction.** API clients are created on first use rather
+  than at import time, so environment variables are read after they load.
+- **Bounded token usage.** File count, file size, and per-file context are
+  capped, and archaeology runs as a single batched request, keeping the
+  pipeline within the Groq free tier.
+- **Deterministic output.** ADR filenames and MADR formatting are generated in
+  code, not delegated to the model.
+
+## Requirements
+
+- Node.js 18 or later
+- npm
+- A Groq API key (for the web application and CLI; not required for the Bob
+  IDE interface or demo mode)
+
+## Installation
+
+```bash
+git clone <repository-url>
 cd adr-archaeologist
-
-# Install dependencies
 npm install
+```
 
-# Run development server
+## Configuration
+
+Create a `.env.local` file in the project root. Values in `.env.local` take
+precedence over `.env`.
+
+```env
+# Required for the web application and CLI
+GROQ_API_KEY=your_groq_api_key
+
+# Optional. Raises the GitHub API limit from 60 to 5000 requests/hour
+GITHUB_TOKEN=your_github_token
+
+# Frontend only. Defaults to http://localhost:3001
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+
+# Optional. When "true", the API serves the cached demo output
+DEMO_MODE=false
+
+# Optional. API server port. Defaults to 3001
+PORT=3001
+```
+
+## Running the Web Application
+
+The web application requires the API backend and the frontend to run together.
+
+```bash
+# Terminal 1 — API backend (port 3001)
+npm run backend
+
+# Terminal 2 — frontend (port 3000)
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open `http://localhost:3000`. Enter a public GitHub repository URL, optionally
+scope the analysis to a subdirectory or to specific focus areas, and start the
+analysis. The demo option on the home page loads pre-generated output
+immediately and makes no external API calls.
 
-### Environment Variables
-
-Create `.env.local`:
-
-```env
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
-```
-
-For production, set this to your Render backend URL.
-
-## Usage
-
-### CLI Command (New!)
-
-Generate ADRs for the current repository directly from the command line:
+For a production build of the frontend:
 
 ```bash
-# Generate ADRs for current repository
-npm run adr:generate
-
-# Focus on specific decision categories
-npm run adr:generate -- --focus=infrastructure,auth,database
-
-# Analyze a different repository
-npm run adr:generate -- --repo=https://github.com/django/django
-
-# Filter by subdirectory
-npm run adr:generate -- --path=src/
+npm run build
+npm run start
 ```
 
-**Output**: Creates `docs/adr/` directory with:
-- Individual ADR files (e.g., `0001-use-redis-for-caching.md`)
-- `README.md` index with summary table
+## API Reference
 
-**Focus Areas**: `infrastructure`, `database`, `auth`, `caching`, `structure`, `testing`, `communication`, `error_handling`
+The API backend exposes the following endpoints.
 
-### Try the Demo
-
-1. Click "Try with django/django →" on the home page
-2. See pre-generated ADRs instantly (no backend required)
-3. Explore archaeology discoveries in the middleware ADR
-
-### Analyze Your Repository (Web UI)
-
-1. Paste a GitHub repository URL
-2. Optionally filter by subdirectory or focus areas
-3. Click "Generate ADRs"
-4. Watch the real-time pipeline progress
-5. Download results as ZIP or create a PR
+| Method | Endpoint           | Description                                            |
+|--------|--------------------|--------------------------------------------------------|
+| GET    | `/health`          | Health check.                                          |
+| GET    | `/repo/validate`   | Validates a repository URL. Query parameter: `url`.    |
+| GET    | `/analyze/stream`  | Runs the pipeline and streams progress over SSE.       |
+| POST   | `/analyze`         | Runs the pipeline and returns the full result as JSON. |
+| POST   | `/github/pr`       | Opens a pull request containing the generated ADRs.    |
 
 ## Project Structure
 
 ```
-├── app/                    # Next.js app directory
-│   ├── page.tsx           # Home page
-│   ├── results/           # Results page
-│   ├── layout.tsx         # Root layout
-│   └── globals.css        # Global styles
-├── components/            # React components
-│   ├── ui/               # Base UI components
-│   ├── ADRCard.tsx       # ADR display card
-│   ├── PipelineProgress.tsx
-│   └── DownloadButtons.tsx
-├── lib/                   # Core logic
-│   ├── api.ts            # Backend API client
-│   └── types/            # TypeScript types
-├── scripts/              # Utilities
-│   └── demo-fixture.ts   # Demo data
-└── .bob/                 # Bob IDE configuration
-    ├── modes/            # Custom mode
-    ├── skills/           # ADR generation skill
-    └── commands/         # /adr command
+app/                      Next.js frontend (pages, layout, styles)
+components/                React components (results, progress, export, UI)
+lib/                       Frontend API client and shared types
+scripts/                   CLI generator, demo fixture, test utilities
+src/
+  types.ts                 Backend domain and SSE event types
+  lib/
+    pipeline.ts            Pipeline orchestration
+    groq.ts                Groq client and JSON handling
+    schemas.ts             Zod validation and normalization
+    stages/                Stage 1–4 implementations
+    github/                Repository fetch and pull-request creation
+    export/madr.ts         MADR document and index generation
+    demo/cache.ts          Cached demo output
+server.ts                  Express API server
+bob-config/                Bob IDE mode, skill, and command (reference copies)
+.bob/                      Installed Bob IDE configuration
 ```
 
-## Bob IDE Integration
+## Limitations
 
-This project includes custom Bob IDE configuration:
+The web and CLI pipelines run against the Groq free tier and therefore
+truncate file context to remain within the token budget. This is well suited
+to detecting decisions and inferring their context, but it limits how much
+archaeology evidence the model can see, since such evidence is often located
+deep within files. The Bob IDE interface does not have this constraint: it
+reads full file contents and incurs no API cost, and is the recommended path
+when thorough archaeology is the priority.
 
-- **Mode**: `adr-archaeologist` - Specialized for ADR analysis
-- **Skill**: `adr-generate` - 4-stage ADR generation pipeline
-- **Command**: `/adr generate` - Generate ADRs for current repository
-
-## Deployment
-
-### Frontend (Vercel)
-
-1. Connect GitHub repository to Vercel
-2. Set environment variable: `NEXT_PUBLIC_BACKEND_URL`
-3. Deploy (automatic on push)
-
-### Backend (Render)
-
-See `ADR-Archeologist/` directory for backend deployment instructions.
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details.
+Archaeology results also depend on the analyzed repository actually containing
+abandoned-code evidence. Clean reference repositories will legitimately yield
+few or no archaeology findings.
 
 ## Acknowledgments
 
-- Built with [IBM Bob IDE](https://www.ibm.com/products/watsonx-code-assistant)
-- Powered by [Groq](https://groq.com/) (Llama 3.3 70B)
-- Inspired by the [MADR](https://adr.github.io/madr/) format
+- IBM Bob IDE — host environment for the editor-integrated interface
+- Groq — inference provider (Llama 3.3 70B)
+- MADR — Architecture Decision Record format
 
-## Contributing
+## License
 
-Contributions welcome! Please open an issue or submit a pull request.
-
----
-
-Made with ❤️ using IBM Bob IDE
+Released under the MIT License.
