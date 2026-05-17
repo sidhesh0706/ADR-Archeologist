@@ -1,7 +1,7 @@
 import { Octokit } from "@octokit/rest"
-import type { ADRPackage } from "@/types"
+import type { ADRPackage } from "../../types"
 import { parseRepoUrl } from "./fetcher"
-import { toMADR, toFilename, buildIndex } from "@/lib/export/madr"
+import { toMADR, toFilename, buildIndex } from "../export/madr"
 
 const BRANCH_NAME = "adr-archaeologist/add-adrs"
 const PR_TITLE = "docs: add reconstructed ADRs via ADR Archaeologist"

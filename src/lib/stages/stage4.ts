@@ -1,7 +1,7 @@
 import { callGroqJSON } from "../groq"
 import { Stage4Schema, type Stage4Output, type Stage1Output, type Stage2Output, type Stage3Output } from "../schemas"
-import type { ADR, RepoContext } from "@/types"
-import { toMADR, toFilename } from "@/lib/export/madr"
+import type { ADR, RepoContext } from "../../types"
+import { toMADR, toFilename } from "../export/madr"
 
 // ─── System Prompt ───────────────────────────────────────────────────────────
 

@@ -186,12 +186,10 @@ Reason: Implicit ordering made debugging request pipelines nearly impossible —
 `,
     },
   ],
-  metadata: {
-    repoUrl: 'https://github.com/django/django',
-    analysisDate: new Date().toISOString(),
-    totalDecisions: 8,
-    archaeologyCount: 2,
-  },
+  repoUrl: 'https://github.com/django/django',
+  totalDecisions: 8,
+  archaeologyCount: 2,
+  totalTimeMs: 463000,
 }
 
 // Made with Bob

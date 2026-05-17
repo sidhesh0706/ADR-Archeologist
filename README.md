@@ -54,13 +54,37 @@ For production, set this to your Render backend URL.
 
 ## Usage
 
+### CLI Command (New!)
+
+Generate ADRs for the current repository directly from the command line:
+
+```bash
+# Generate ADRs for current repository
+npm run adr:generate
+
+# Focus on specific decision categories
+npm run adr:generate -- --focus=infrastructure,auth,database
+
+# Analyze a different repository
+npm run adr:generate -- --repo=https://github.com/django/django
+
+# Filter by subdirectory
+npm run adr:generate -- --path=src/
+```
+
+**Output**: Creates `docs/adr/` directory with:
+- Individual ADR files (e.g., `0001-use-redis-for-caching.md`)
+- `README.md` index with summary table
+
+**Focus Areas**: `infrastructure`, `database`, `auth`, `caching`, `structure`, `testing`, `communication`, `error_handling`
+
 ### Try the Demo
 
 1. Click "Try with django/django →" on the home page
 2. See pre-generated ADRs instantly (no backend required)
 3. Explore archaeology discoveries in the middleware ADR
 
-### Analyze Your Repository
+### Analyze Your Repository (Web UI)
 
 1. Paste a GitHub repository URL
 2. Optionally filter by subdirectory or focus areas

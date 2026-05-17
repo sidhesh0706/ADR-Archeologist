@@ -50,7 +50,7 @@ export default function DownloadButtons({ pkg }: DownloadButtonsProps) {
     
     setPrLoading(true)
     try {
-      const result = await api.createPR(prToken, pkg.metadata.repoUrl, pkg.adrs)
+      const result = await api.createPR(prToken, pkg.repoUrl, pkg.adrs)
       setPrResult(result)
       if (result.prUrl) {
         setPrModalOpen(false)

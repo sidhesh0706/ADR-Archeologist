@@ -145,7 +145,7 @@ export default function ResultsPage() {
   // Done phase
   if (phase === 'done' && pkg) {
     const isDemo = searchParams.get('demo') === 'true'
-    const archaeologyCount = pkg.metadata.archaeologyCount || 0
+    const archaeologyCount = pkg.archaeologyCount ?? 0
 
     return (
       <div className="min-h-screen bg-black text-white">

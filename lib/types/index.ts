@@ -44,16 +44,18 @@ export interface PRResponse {
   error?: string
 }
 
+// Flat shape — must stay in sync with the backend's ADRPackage in
+// src/types.ts. This is exactly what the Express server emits over the
+// SSE `pipeline_done` event and what /github/pr expects. Do NOT reintroduce
+// a nested `metadata` object: the backend never sends one.
 export interface ADRPackage {
   adrs: Array<ADR & { filename: string; markdownContent: string }>
-  repoName: string
   indexContent: string
-  metadata: {
-    repoUrl: string
-    analysisDate: string
-    totalDecisions: number
-    archaeologyCount: number
-  }
+  repoName: string
+  repoUrl: string
+  totalDecisions: number
+  archaeologyCount: number
+  totalTimeMs: number
 }
 
 export type SSEEvent =

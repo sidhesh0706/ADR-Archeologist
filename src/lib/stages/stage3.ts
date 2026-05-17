@@ -1,6 +1,6 @@
 import { callGroqJSON } from "../groq"
 import { Stage3Schema, type Stage3Output, type Stage1Output } from "../schemas"
-import type { RepoContext } from "@/types"
+import type { RepoContext } from "../../types"
 import { buildFileContext } from "./stage1"
 
 // ─── System Prompt ───────────────────────────────────────────────────────────

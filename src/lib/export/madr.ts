@@ -1,4 +1,4 @@
-import type { ADR, ADRPackage } from "@/types"
+import type { ADR, ADRPackage } from "../../types"
 
 // ─── Filename formatter ──────────────────────────────────────────────────────
 

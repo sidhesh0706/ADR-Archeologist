@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest'
-import type { RepoContext, RepoFile, RepoValidation } from '@/types'
+import type { RepoContext, RepoFile, RepoValidation } from '../../types'
 
 /**
  * Priority file extensions to fetch first for better context

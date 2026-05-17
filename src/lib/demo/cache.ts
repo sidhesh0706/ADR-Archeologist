@@ -1,5 +1,5 @@
-import type { SSEEvent, ADRPackage } from "@/types"
-import { PipelineStage } from "@/types"
+import type { SSEEvent, ADRPackage } from "../../types"
+import { PipelineStage } from "../../types"
 import djangoAdrs from "./django-adrs.json"
 
 // ─── Demo Mode ───────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 // ─── Main Pipeline Orchestration ─────────────────────────────────────────────
 // Wires all 4 stages together with progress callbacks
 
-import type { AnalyzeRequest, ADRPackage, SSEEvent, RepoContext, ADR } from "@/types"
+import type { AnalyzeRequest, ADRPackage, SSEEvent, RepoContext, ADR } from "../types"
 import { fetchRepoContext } from "./github/fetcher"
 import { runStage1 } from "./stages/stage1"
 import { runStage2 } from "./stages/stage2"
